@@ -1,0 +1,146 @@
+.App {
+  text-align: center;
+}
+
+.wrapper {
+  height: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #a5bbfd;
+}
+
+.flex-container {
+  background-color: #a5bbfd;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: black;
+  min-height: 100vh;
+  font-size: calc(10px + 2vmin);
+}
+
+.reviewtext {
+  align-self: center;
+  flex-wrap: nowrap;
+  margin: 0.475rem;
+  flex-grow: 1;
+  font-size: large;
+  max-height: 100vh;
+  min-width: 160vh;
+  max-width: 160vh;
+  background-color: white;
+  color: black;
+  border-radius: 8px;
+  border-color: black;
+
+  border-bottom:  2px #113a65;
+}
+
+.table {
+  align-self: center;
+  flex-wrap: nowrap;
+  min-width: 160vh;
+  max-width: 160vh;
+  background-color: white;
+  color: black;
+  border-radius: 8px;
+  border-color: black;
+
+  border-bottom:  2px #113a65;
+}
+
+.markupColor {
+  opacity: 0.4;
+}
+
+span[data-title] {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  border-bottom: 1px dashed #000;
+}
+
+span[data-title]:hover:before {
+  content: attr(data-title);
+  position: absolute;
+  max-width: 130px;
+  color: #fff;
+  background: #4676D7;
+  padding: 5px;
+  border-radius: 8px;
+  bottom: 25px;
+  left: 50px;
+}
+
+input[type="text"] {
+  background-color: white;
+  border: 10;
+  border-radius: 8px;
+  border-bottom: solid 2px #113a65;
+  width: 60%;
+  padding-bottom: 4px;
+  color: #103a66;
+  font-weight: lighter;
+  margin-bottom: 30px;
+  margin-right: 20px;
+  font-size: 20px;
+  outline: none;
+}
+
+input::-moz-placeholder {
+  color: #103a65;
+}
+
+button {
+  appearance: none;
+  border: 0;
+  border-radius: 6px;
+  background: #4676D7;
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  background-color: white;
+
+  align-self: center;
+  flex-wrap: nowrap;
+  min-width: 160vh;
+  max-width: 160vh;
+  font-size: large;
+  background-color: white;
+  color: black;
+}
+
+th, td {
+  padding: 10px 20px;
+  border: 1px solid #000;
+}
+
+.text_red {
+  background-color: rgba(255, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.text_green {
+  background-color: rgba(0, 255, 0, 0.4);
+  border-radius: 8px;
+}
+
+.text_blue {
+  background-color: rgba(0, 0, 255, 0.3);
+  border-radius: 8px;
+  border-bottom: 1px dashed #000;
+}
+
+.text_yellow {
+  background-color: rgba(255, 255, 0, 0.5);
+  border-radius: 8px;
+  border-bottom: 1px dashed #000;
+}
