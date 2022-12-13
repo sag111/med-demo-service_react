@@ -7,7 +7,7 @@
 
     `python ./flask_service.py predict --config configs/spert-predict_RDRS-ext_XLM-R-sag.conf`
     
-3. Для запуска React приложения:
+3. Для запуска React приложения в другом окне командной строки:
 
     `cd react-webapp-med`
     
