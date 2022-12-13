@@ -89,11 +89,6 @@ def prepare_another_json():
     # формируем контексты функцией contextCreate
     context = {}
     # context = contextCreate(relationPairs, relationUnique)
-    print('????????????')
-    print(template['relations'])
-    print('------------')
-    print(template['entities'])
-    print('????????????')
     context = contextCreate_v2(template['relations'], template['entities'], connection_1, connection_0, relationPairs)
 
 

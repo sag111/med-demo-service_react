@@ -3,38 +3,20 @@ import { useState, useEffect } from 'react';
 import "./App.css";
 
 import Form from "./components/Form";
-//import TransformFunction from "./components/TransformFunction";
+
 var res_fetch;
+
 const transformFunction = (input) => {
-    /*
-     const result = fetch('/', {
-      method: 'POST',
-      body: input,
-    }).then((response) => {
-      return response.json().then( (data) =>  {return data.data});
-      //console.log(response);
-      //response.json().then((body) => {
-      //  console.log(body); //this.setState({ imageURL: `http://localhost:8000/${body.file}` });
-      //});
-    });
-    */
     var fileJson = require('./test.json');
     var randIndex = Math.floor(Math.random() * fileJson.length);
-    console.log(fileJson[randIndex]);
 
     return fetch('/', {
        method: 'POST',
        body: input,
      }).then((response) => response.json())
         .then( (data) =>  {res_fetch = data.data});
-
 }
 
-/*
-String.prototype.replaceAt = function(index, replacement) {
-    return this.substring(0, index) + replacement + this.substring(index + replacement.length);
-}
-*/
 const splitOnce = (s, on) => {
   var [first, ...rest] = s.split(on);
   return [first, rest.length > 0 ? rest.join(on) : null];
@@ -90,15 +72,6 @@ const prepareInBrackets = (obj, str) => {
 }
 
 class App extends Component {
-  //reviewExample = useState('')
-
-
-  //useEffect(() => {
-    // Update the document title using the browser API
-    //document.title = `You clicked ${count} times`;
-
-  //});
-  //const [res, setRes] = useState('');
 
   state = {
     found: false,
@@ -109,20 +82,13 @@ class App extends Component {
     tableData: {},
     error: undefined
   }
-  /*
-  useEffect(() => {
-    setRes(transformFunction(input))
-  }, [input])
-  */
+
   gettingData = async (e) => {
     e.preventDefault();
     var input = e.target.elements.keyword.value;
     if (input){
-
-      //var reviewExample; //= transformFunction(input);
       transformFunction(input).then(() => {
         var reviewExample = res_fetch;
-        console.log(reviewExample)
         const entities = Object.values(reviewExample.entities);
         var text = reviewExample.text;
         var totalArr = [];
@@ -130,22 +96,12 @@ class App extends Component {
         var totalobj = {};
         totalObj.Medication = {};
         totalObj.Disease = {};
-        console.log(entities);
 
         const total = entities.map((obj) => {
           const markupColor = prepareColor(obj.MedEntityType);
           obj.spans.forEach(span => {
             const substr = reviewExample.text.substring(span.begin, span.end);
-            console.log(substr)
             if (text) {
-              console.log(text)
-              /*
-              if (!text.includes(substr)) {
-                totalArr.forEach(subtext => {
-                  if (subtext)
-                })
-              }
-              */
               if (text.includes(substr)) {
                 const dataArr = splitOnce(text, substr);
                 if (obj.MedEntityType === "Medication") {
@@ -159,7 +115,6 @@ class App extends Component {
               }
             }
           });
-          console.log(totalArr)
           obj.Context.map(context => {
             if (!totalobj[context]) {
               totalobj[context] = []
@@ -211,9 +166,6 @@ class App extends Component {
 
         const result = totalArr.join('');
         const resultSplit = result.split('\n', 5);
-
-        console.log(totalObj);
-        console.log(totalobj);
 
         this.setState({
           found: true,
