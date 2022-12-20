@@ -13,8 +13,21 @@ const transformFunction = (input) => {
     return fetch('/', {
        method: 'POST',
        body: input,
-     }).then((response) => response.json())
-        .then( (data) =>  {res_fetch = data.data});
+     }).then((response) => {
+          if (response.status >= 200 && response.status < 300) {
+            return response.json();
+          } else {
+            let error = new Error(response.statusText);
+            error.response = response;
+            throw error;
+          }
+        })
+        .then( (data) =>  { res_fetch = data.data })
+        .catch((e) => {
+            console.log('Error: ' + e.message);
+            console.log(e.response);
+            res_fetch = 'Ошибка: некорректный ответ от сервера';
+        });
 }
 
 const splitOnce = (s, on) => {
@@ -88,6 +101,18 @@ class App extends Component {
     var input = e.target.elements.keyword.value;
     if (input){
       transformFunction(input).then(() => {
+        if (res_fetch === 'Ошибка: некорректный ответ от сервера') {
+          this.setState({
+            found: false,
+            title: "",
+            text: "",
+            url: "",
+            entities: [],
+            tableData: {},
+            error: "Ошибка: некорректный ответ от сервера"
+          });
+          return;
+        }
         var reviewExample = res_fetch;
         const entities = Object.values(reviewExample.entities);
         var text = reviewExample.text;
@@ -96,10 +121,11 @@ class App extends Component {
         var totalobj = {};
         totalObj.Medication = {};
         totalObj.Disease = {};
+        var textTail = '';
 
         const total = entities.map((obj) => {
           const markupColor = prepareColor(obj.MedEntityType);
-          obj.spans.forEach(span => {
+          obj.spans.forEach((span, idx, array) => {
             const substr = reviewExample.text.substring(span.begin, span.end);
             if (text) {
               if (text.includes(substr)) {
@@ -112,9 +138,11 @@ class App extends Component {
                   totalArr.push(dataArr[0] + `<span class="text_${markupColor}">`+substr+'</span>');
                 }
                 text = dataArr[1];
+                textTail = text;
               }
             }
           });
+          
           obj.Context.map(context => {
             if (!totalobj[context]) {
               totalobj[context] = []
@@ -136,8 +164,6 @@ class App extends Component {
             }
 
           });
-
-
 
           if (obj.MedEntityType === "Medication") {
             obj.Context.map(context => {
@@ -163,21 +189,42 @@ class App extends Component {
             })
           }
         });
+        totalArr.push(textTail);
 
         const result = totalArr.join('');
         const resultSplit = result.split('\n', 5);
 
-        this.setState({
-          found: true,
-          title: resultSplit[2],
-          text: resultSplit[4],
-          url: resultSplit[0],
-          entities: entities,
-          tableData: totalobj,
-          error: undefined
-        });
-
-
+        if (resultSplit.length === 5) {
+          this.setState({
+            found: true,
+            title: resultSplit[2],
+            text: resultSplit[4],
+            url: resultSplit[0],
+            entities: entities,
+            tableData: totalobj,
+            error: undefined
+          });
+        } else if (resultSplit.length === 1) {
+          this.setState({
+            found: true,
+            title: "",
+            text: resultSplit[0],
+            url: "",
+            entities: entities,
+            tableData: totalobj,
+            error: undefined
+          });
+        } else {
+          this.setState({
+            found: true,
+            title: resultSplit[0],
+            text: resultSplit[1],
+            url: "",
+            entities: entities,
+            tableData: totalobj,
+            error: undefined
+          });
+        }
       });
 
     } else {
@@ -191,8 +238,6 @@ class App extends Component {
         error: "Введите текст отзыва"
       });
     }
-
-
   }
 
   render() {
@@ -206,11 +251,17 @@ class App extends Component {
               <div>
 
                 <div className="reviewtext">
-                  <p>
-                    <b dangerouslySetInnerHTML={{ __html: this.state.title }}/>
-                  </p>
-                  <div dangerouslySetInnerHTML={{ __html: this.state.text }}/>
-                  <p> <a href={this.state.url}> {this.state.url} </a> </p>
+                  {this.state.title &&
+                    <p>
+                      <b dangerouslySetInnerHTML={{ __html: this.state.title }}/>
+                    </p>
+                  }
+                  {this.state.text &&
+                    <div dangerouslySetInnerHTML={{ __html: this.state.text }}/>
+                  }
+                  {this.state.url &&
+                    <p> <a href={this.state.url}> {this.state.url} </a> </p>
+                  }
                 </div>
               </div>
             }

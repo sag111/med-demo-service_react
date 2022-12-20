@@ -4,7 +4,7 @@ class Form extends React.Component{
   render(){
     return(
       <form onSubmit={this.props.TransformText}>
-        <input type="text" name="keyword" placeholder="Введите текст отзыва"/>
+        <textarea type="text" name="keyword" placeholder="Введите текст отзыва" cols="80" rows="8" charswidth="100"/>
         <button>Разобрать</button>
       </form>
     );
