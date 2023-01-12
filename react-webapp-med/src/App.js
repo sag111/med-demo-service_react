@@ -10,7 +10,7 @@ const transformFunction = (input) => {
     var fileJson = require('./test.json');
     var randIndex = Math.floor(Math.random() * fileJson.length);
 
-    return fetch('/', {
+    return fetch('./process/', {
        method: 'POST',
        body: input,
      }).then((response) => {
