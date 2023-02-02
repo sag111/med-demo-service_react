@@ -7,7 +7,7 @@ import re
 # в другой Json на вход в веб-интерфейс med-demo
 
 def contextCreate_v2(test_relations, entities, connection_1, connection_0, relationPairs):
-    context = {1: [], 2: [], 3: []}
+    context = {1: [], 2: [], 3: []} # первого контекста сейчас нет, только 2 и 3
 
     for rel in test_relations:
         h = rel["head"]
@@ -33,27 +33,27 @@ def contextCreate_v2(test_relations, entities, connection_1, connection_0, relat
 
     for k in range(len(entities)):
         if k not in context[2] and k not in context[3]:
-            context[1].append(k)
+            context[2].append(k)  # здесь раньше заполнялся первый контекст context[1]
         elif k in context[2] and k not in context[3]:
             for el in context[3]:
                 if [k, el] in relationPairs or [el, k] in relationPairs:
-                    context[1].append(k)
+                    context[2].append(k)  # здесь раньше заполнялся первый контекст context[1]
 
     return context
 
-def prepare_another_json():
+def prepare_another_json(tmpFilePath):
 
     resultFormat = {}
     num = 1
     # получаем данные выходного файла предсказаний модели spert в формате Json
-    with open('predicts/output_predictions_1.json') as f:
+    with open(tmpFilePath) as f:
         file_content = f.read()
         templates = json.loads(file_content)
 
     template = templates[0]
 
     # формируем поля в результирующем Json: text_id, text
-    resultFormat['text_id'] = re.findall(r"\d+", template['tokens'][0])[0]
+    # resultFormat['text_id'] = re.findall(r"\d+", template['tokens'][0])[0]
     resultFormat['text'] = ' '.join(template['tokens'])
     resultFormat['entities'] = {}
     countItem = 0
@@ -100,7 +100,7 @@ def prepare_another_json():
         resultItem = resultFormat['entities'][countItem]
 
         substrLeft = template['tokens'][item['start']]
-        substrRight = template['tokens'][item['end']]
+        substrRight = template['tokens'][item['end']-1]
 
         indexLeftStart = resultFormat['text'].find(substrLeft, ileft)
         ileft = indexLeftStart
