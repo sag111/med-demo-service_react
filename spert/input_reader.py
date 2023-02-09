@@ -225,6 +225,20 @@ class JsonPredictionInputReader(BaseInputReader):
         return document
 
 
+class ListOfStringsPredictionInputReader(JsonPredictionInputReader):
+
+    def read(self, textlines_list, dataset_label):
+        dataset = Dataset(dataset_label, self._relation_types, self._entity_types, self._neg_entity_count,
+                          self._neg_rel_count, self._max_span_size)
+        self._parse_dataset(textlines_list, dataset)
+        self._datasets[dataset_label] = dataset
+        return dataset
+
+    def _parse_dataset(self, textlines_list, dataset):
+        for document in tqdm(textlines_list, desc="Parse dataset '%s'" % dataset.label):
+            self._parse_document(document, dataset)
+
+
 def _parse_tokens(jtokens, dataset, tokenizer):
     doc_tokens = []
 

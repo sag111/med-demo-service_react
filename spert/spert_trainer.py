@@ -156,19 +156,20 @@ class SpERTTrainer(BaseTrainer):
         self._logger.info("Logged in: %s" % self._log_path)
         self._close_summary_writer()
 
-    def predict(self, model, dataset_path: str, types_path: str, input_reader_cls: Type[BaseInputReader]):
+    def predict(self, model, textlines_list, input_reader_cls: Type[BaseInputReader]):
         args = self._args
 
         # read datasets
-        input_reader = input_reader_cls(types_path, self._tokenizer,
+        input_reader = input_reader_cls(self._args.types_path, self._tokenizer,
                                         max_span_size=args.max_span_size,
                                         spacy_model=args.spacy_model)
-        dataset = input_reader.read(dataset_path, 'dataset')
+        dataset = input_reader.read(textlines_list, 'dataset')
 
         # model = self._load_model(input_reader)
         # model.to(self._device)
 
-        self._predict(model, dataset, input_reader, tmpFilePath=dataset_path)
+        predictions = self._predict(model, dataset, input_reader, tmpFilePath=None)
+        return predictions
 
     def load_model(self):
         model = self._load_model()
@@ -307,7 +308,7 @@ class SpERTTrainer(BaseTrainer):
 
             # iterate batches
             total = math.ceil(dataset.document_count / self._args.eval_batch_size)
-            for batch in tqdm(data_loader, total=total, desc='Predict'):
+            for batch in data_loader:
                 # move batch to selected device
                 batch = util.to_device(batch, self._device)
 
@@ -326,7 +327,8 @@ class SpERTTrainer(BaseTrainer):
                 batch_pred_entities, batch_pred_relations = predictions
                 pred_entities.extend(batch_pred_entities)
                 pred_relations.extend(batch_pred_relations)
-        prediction.store_predictions(dataset.documents, pred_entities, pred_relations, tmpFilePath)
+        predictions = prediction.store_predictions(dataset.documents, pred_entities, pred_relations, None)
+        return predictions
 
     def _get_optimizer_params(self, model):
         param_optimizer = list(model.named_parameters())

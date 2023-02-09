@@ -204,6 +204,8 @@ def store_predictions(documents, pred_entities, pred_relations, store_path):
                                relations=converted_relations)
         predictions.append(doc_predictions)
 
-    # store as json
-    with open(store_path, 'w') as predictions_file:
-        json.dump(predictions, predictions_file)
+    if store_path is not None:
+        # store as json
+        with open(store_path, 'w') as predictions_file:
+            json.dump(predictions, predictions_file)
+    return predictions

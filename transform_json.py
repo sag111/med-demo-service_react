@@ -41,16 +41,16 @@ def contextCreate_v2(test_relations, entities, connection_1, connection_0, relat
 
     return context
 
-def prepare_another_json(tmpFilePath):
+def prepare_another_json(sagnlpjson):
 
     resultFormat = {}
     num = 1
     # получаем данные выходного файла предсказаний модели spert в формате Json
-    with open(tmpFilePath) as f:
-        file_content = f.read()
-        templates = json.loads(file_content)
+    #with open(tmpFilePath) as f:
+    #    file_content = f.read()
+    #    sagnlpjson = json.loads(file_content)
 
-    template = templates[0]
+    template = sagnlpjson[0]
 
     # формируем поля в результирующем Json: text_id, text
     # resultFormat['text_id'] = re.findall(r"\d+", template['tokens'][0])[0]

@@ -1,6 +1,6 @@
 import argparse
 
-from args import train_argparser, eval_argparser, predict_argparser
+from spert.args import train_argparser, eval_argparser, predict_argparser
 from config_reader import process_configs
 from spert import input_reader
 from spert.spert_trainer import SpERTTrainer
