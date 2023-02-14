@@ -1,7 +1,5 @@
-import os
 import sys
-# Это нужно так как у сохранённой модели глеба зашиты пути к его модулям. ВОт почему надо сохранять state_dict, а не всю модель целиком, если делаем кастомные модули.
-sys.path.append(os.path.dirname(__file__) + '/normalization')
+sys.path.append("/media/grartem/B7DB5B36121B73AA/Projects/SAG_MED/med-demo/normalization")
 import json
 import argparse
 import logging
@@ -24,7 +22,7 @@ from normalization.models import CADEC_SoTa
 from normalization.dataset import MedNormDataset
 import torch
 
-IS_DEBUG_WITHOUT_SERVICE = False
+IS_DEBUG_WITHOUT_SERVICE = True
 
 app = Flask(__name__)
 
