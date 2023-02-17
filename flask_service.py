@@ -18,7 +18,7 @@ from spert.args import train_argparser, eval_argparser, predict_argparser
 from spert.config_reader import _yield_configs
 from spert import input_reader
 from spert.spert_trainer import SpERTTrainer
-from transform_json import prepare_another_json, contextCreate_v2
+from transform_json import spert_predictions_to_sagnlpjson, spert_predictions_to_sagnlpjson_2
 
 from normalization.models import CADEC_SoTa
 from normalization.dataset import MedNormDataset
@@ -40,8 +40,8 @@ def ParseText(textline):
 
     predictions = spert_trainer.predict(spert_model, textlines_list=[textline],
                           input_reader_cls=input_reader.ListOfStringsPredictionInputReader)
-
-    newJson = prepare_another_json(predictions)
+    print("PREDICTIONS", predictions)
+    newJson = spert_predictions_to_sagnlpjson(preыdictions, [textline])
     return newJson
 
 def NormalizeSagnlpjson(sagnlpjson):
@@ -125,11 +125,13 @@ if __name__ == '__main__':
     # Отладка функций
     if IS_DEBUG_WITHOUT_SERVICE:
         # "я принял аспирин от боли в голове, но от него у меня заболел живот, начало рвать и прочие побочки. .."
-        sagnlpjson = ParseText("я принял аспирин от боли в голове, но от него у меня заболел живот, начало рвать и прочие побочки. ..")
+        sagnlpjson = ParseText("Я выпил аспирин, чтоб голова не болела, но от него у меня заболел живот.От ношпы обычно не болел, но она мне не помогала.")
+        #sagnlpjson = ParseText("я принял аспирин от боли в голове, но от него у меня заболел живот, начало рвать и прочие побочки. ..")
         if NORMALIZER_LOADED:
             NormalizeSagnlpjson(sagnlpjson)
         response = {'data': sagnlpjson}
         print(response)
+
     # Запуск сервиса
     else:
         app.run(host=service_config.SERVICE_HOST,port=service_config.SERVICE_PORT, debug=False)

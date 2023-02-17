@@ -1,4 +1,5 @@
 from itertools import combinations
+from collections import defaultdict
 import numpy as np
 import json
 import re
@@ -41,7 +42,92 @@ def contextCreate_v2(test_relations, entities, connection_1, connection_0, relat
 
     return context
 
-def prepare_another_json(sagnlpjson):
+def contextCreate_v3(sagnlpjson, predictions):
+    """
+    sagnlpjson - sagnlpjson - словарь с ключами: {text, entities}, relation нет
+    predictions - выходы, которые возвращает сперт. Список словарей с ключами:
+            - tokens - список строк (токенов)
+            - entities - список словарей (сущностей) {type, start, end}
+            - relations - список словарей (отношений) {type, head (int), tail (int)}
+    """
+    main_context = []
+    other_context = []
+
+    # Определяем, какое упоминание драгнейма имеет больше всего положительных связей
+    drugnames_rel1_count = defaultdict(int)
+    for relation in predictions["relations"]:
+        if relation["type"][-1] == "1":
+            first_entity = sagnlpjson["entities"][str(relation["head"])]
+            second_entity = sagnlpjson["entities"][str(relation["tail"])]
+            if first_entity.get("MedType") == "Drugname":
+                drugnames_rel1_count[relation["head"]] += 1
+            if second_entity.get("MedType") == "Drugname":
+                drugnames_rel1_count[relation["tail"]] += 1
+    # Оно будет в первом контексте
+    main_drugname_id = sorted(list(drugnames_rel1_count.items()), reverse=True)[0][0]
+    main_context.append(main_drugname_id)
+    # Определяем, какие упоминания (не драгнеймы) сколько положительных и отрицательных связей они имеют
+    # с драгнеймом первого контекста
+    entities_posneg_rels_to_main = defaultdict(lambda: {"0": 0, "1": 0})
+    for relation in predictions["relations"]:
+        first_entity = sagnlpjson["entities"][str(relation["head"])]
+        second_entity = sagnlpjson["entities"][str(relation["tail"])]
+        if first_entity.get("MedType", None) != "Drugname":
+            if relation["tail"] == main_drugname_id:
+                entities_posneg_rels_to_main[relation["head"]][relation["type"][-1]] += 1
+        if second_entity.get("MedType", None) != "Drugname":
+            if relation["head"] == main_drugname_id:
+                entities_posneg_rels_to_main[relation["tail"]][relation["type"][-1]] += 1
+    # Если упоминание имеет больше положительных чем отрицательных связей с основным драгеймом,
+    # то добавляем его в основной контекст, если наоборот, то во второй
+    for e_i, entity in sagnlpjson["entities"].items():
+        if entity.get("MedType", None) != "Drugname":
+            e_i = int(e_i)
+            if e_i in entities_posneg_rels_to_main.keys():
+                if entities_posneg_rels_to_main[e_i]["1"] >= entities_posneg_rels_to_main[e_i]["0"]:
+                    main_context.append(e_i)
+                else:
+                    other_context.append(e_i)
+            else:
+                main_context.append(e_i)
+    # теперь решаем, что делать с остальными драгнеймами, если у них больше положительных связей с первым контекстом,
+    # то добавляем в него
+    drugnames_posneg_rels_to_main = defaultdict(lambda: {"0": 0, "1": 0})
+    for relation in predictions["relations"]:
+        first_entity = sagnlpjson["entities"][str(relation["head"])]
+        second_entity = sagnlpjson["entities"][str(relation["tail"])]
+        if first_entity.get("MedType", None) == "Drugname" and relation["head"] != main_drugname_id:
+            if relation["tail"] in main_context:
+                drugnames_posneg_rels_to_main[relation["head"]][relation["type"][-1]] += 1
+        if second_entity.get("MedType", None) == "Drugname" and relation["tail"] != main_drugname_id:
+            if relation["head"] in main_context:
+                drugnames_posneg_rels_to_main[relation["tail"]][relation["type"][-1]] += 1
+
+    for e_i, entity in sagnlpjson["entities"].items():
+        if entity.get("MedType", None) == "Drugname":
+            e_i = int(e_i)
+            if e_i in drugnames_posneg_rels_to_main.keys():
+                if drugnames_posneg_rels_to_main[e_i][1] >= drugnames_posneg_rels_to_main[e_i][0]:
+                    main_context.append(e_i)
+                else:
+                    other_context.append(e_i)
+            else:
+                main_context.append(e_i)
+    for e_i, entity in sagnlpjson["entities"].items():
+        if int(e_i) in main_context:
+            entity["Context"].append(1)
+        else:
+            entity["Context"].append(2)
+
+
+def spert_predictions_to_sagnlpjson(spert_predictions, textlines):
+    """
+    params:
+        spert_predictions - выходы, которые возвращает сперт. Список словарей с ключами:
+            - tokens - список строк (токенов)
+            - entities - список словарей (сущностей) {type, start, end}
+            - relations - список словарей (отношений) {type, head (int), tail (int)}
+    """
 
     resultFormat = {}
     num = 1
@@ -50,7 +136,7 @@ def prepare_another_json(sagnlpjson):
     #    file_content = f.read()
     #    sagnlpjson = json.loads(file_content)
 
-    template = sagnlpjson[0]
+    template = spert_predictions[0]
 
     # формируем поля в результирующем Json: text_id, text
     # resultFormat['text_id'] = re.findall(r"\d+", template['tokens'][0])[0]
@@ -84,7 +170,6 @@ def prepare_another_json(sagnlpjson):
         relationIndexes += tuple(pair)
 
     [relationUnique.append(i) for i in relationIndexes if i not in relationUnique]
-
 
     # формируем контексты функцией contextCreate
     context = {}
@@ -124,3 +209,62 @@ def prepare_another_json(sagnlpjson):
         countItem += 1
 
     return resultFormat
+
+def spert_predictions_to_sagnlpjson_2(spert_predictions, textlines):
+    """
+    params:
+        spert_predictions - выходы, которые возвращает сперт. Список словарей с ключами:
+            - tokens - список строк (токенов)
+            - entities - список словарей (сущностей) {type, start, end}
+            - relations - список словарей (отношений) {type, head (int), tail (int)}
+    """
+
+    sagnlpjson = {}
+    # сейчас работаем с одним предсказанием за раз
+    prediction = spert_predictions[0]
+    textline = textlines[0]
+
+    # формируем поля в результирующем Json: text_id, text
+    # resultFormat['text_id'] = re.findall(r"\d+", template['tokens'][0])[0]
+
+    # получаем позиции токенов, пробуем из исходного текста, если не вышло, то из сконкатенированных токенов
+    try:
+        sagnlpjson['text'] = textline
+        tokens_positions = []
+        current_pos = 0
+        for t in prediction["tokens"]:
+            pattern = re.compile(t)
+            mo = pattern.search(textline, pos=current_pos)
+            tokens_positions.append((mo.start(), mo.end()))
+            current_pos = mo.end()
+    except:
+        sagnlpjson['text'] = ""
+        tokens_positions = []
+        for t in prediction["tokens"]:
+            start = len(sagnlpjson['text'])
+            sagnlpjson['text'] += t
+            end = start + len(t)
+            sagnlpjson['text'] += " "
+            tokens_positions.append((start, end))
+        sagnlpjson['text'] = sagnlpjson['text'][:-1]
+
+    # приводим сущности в формат sagnlpjson, не заполняя контексты
+    sagnlpjson['entities'] = {}
+    for e_i, entity in enumerate(prediction['entities']):
+        new_entity = {}
+        startToken = tokens_positions[entity['start']]
+        endToken = tokens_positions[entity['end']]  # -1?
+        new_entity['text'] = sagnlpjson['text'][startToken[0]:endToken[1]]
+        new_entity['spans'] = [{"begin": startToken[0], "end": endToken[1]}]
+        new_entity['MedEntityType'] = entity['type'].split(':')[0]
+        if ':' in entity['type']:
+            typeKeyValue = entity['type'].split(':')[1]
+            itemType = typeKeyValue.split('Type')[0] + 'Type'
+            itemTypeValue = typeKeyValue.split('Type')[1]
+            new_entity[itemType] = itemTypeValue
+        new_entity['Context'] = []
+        sagnlpjson['entities'][str(e_i)] = new_entity
+
+    # заполняем контексты в сущностях по связям
+    contextCreate_v3(sagnlpjson, prediction)
+    return sagnlpjson
