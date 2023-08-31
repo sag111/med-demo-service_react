@@ -5,6 +5,7 @@ sys.path.append(os.path.dirname(__file__) + '/normalization')
 import json
 import argparse
 import logging
+import random
 
 # import flask as fl
 from flask import Flask, request, json, jsonify
@@ -41,7 +42,7 @@ def ParseText(textline):
     predictions = spert_trainer.predict(spert_model, textlines_list=[textline],
                           input_reader_cls=input_reader.ListOfStringsPredictionInputReader)
     print("PREDICTIONS", predictions)
-    newJson = spert_predictions_to_sagnlpjson(preыdictions, [textline])
+    newJson = spert_predictions_to_sagnlpjson(predictions, [textline])
     return newJson
 
 def NormalizeSagnlpjson(sagnlpjson):
@@ -72,6 +73,30 @@ def NormalizeSagnlpjson(sagnlpjson):
     return sagnlpjson
 
 @app.route('/', methods=['GET', 'POST'])
+def hello():
+    return "This is web-service that parse russian texts, extract pharmaceptical entities from it and normalize them " \
+           "according to MedDRA 24.1<br>" \
+           "send get request to the url /json_test to get example of returning json format;<br>" \
+           "send get request to the url /models_status to check if models are loaded and ready; <br>" \
+           "send post request with text data to the url /process to parse input text and receive json"
+
+@app.route('/json_test', methods=['GET'])
+def json_test():
+    print(os.getcwd())
+    print(os.listdir("."))
+    with open("data/example.json", "r") as f:
+        examples_list = json.load(f)
+    random_example = examples_list[random.randint(0, len(examples_list)-1)]
+    response = jsonify({'data': random_example})
+    return response
+
+@app.route('/models_status', methods=['GET'])
+def models_status():
+    return jsonify({"data": {"NER model loaded": SPERT_LOADED, "Normalization model loaded": NORMALIZER_LOADED}})
+
+# очереди?
+
+@app.route('/process', methods=['GET', 'POST'])
 def getTextFromReactReturnJson():
     if request.method == 'POST':
         text = request.get_data().decode("utf-8")
