@@ -7,11 +7,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #a5bbfd;
+  background: #ffffff;
 }
 
 .flex-container {
-  background-color: #a5bbfd;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -99,13 +99,22 @@ textarea::-moz-placeholder {
 button {
   appearance: none;
   border: 0;
-  border-radius: 6px;
-  background: #4676D7;
+  border-radius: 2px;
+  background: #6696f7;
   color: #fff;
   padding: 8px 16px;
   font-size: 16px;
   cursor: pointer;
   margin-right: 0px;
+}
+button:hover {
+  background-color: #6999fa
+}
+button:active {
+  background-color: #79a9ff
+}
+button:disabled {
+  background-color: #a9a9a9
 }
 
 table {

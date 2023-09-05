@@ -14,11 +14,17 @@
 ## react front app
 Отладка проводилась с node-v16.17.1-linux-x64.
 
-Для отладки реакт приложения надо ввести `npm start` находясь папке react-webapp-med. Но перед этим придётся сделать следующее (пока не знаю, как этот процесс настроить без этих костылей):
-- в файле package.json добавить строку "proxy": "http://194.87.237.6:8081/" (как в коммите [73346119edd853f7ea5331c9717d2db220bd35ed](https://github.com/sag111/med-demo-service_react/blob/73346119edd853f7ea5331c9717d2db220bd35ed/react-webapp-med/package.json))
-- в src/App.js заменить строку `return fetch('./process/'` на `return fetch('/'`
-- в flask_service.py заменить `app.run(host='127.0.0.1', port=3000, threaded = True, debug=True)` на  `app.run(host='194.87.237.6', port=3000, threaded = True, debug=True)`
-- возможно убрать `"homepage": ".",` в package.json
+Чтобы отладить react приложение локально, придётся сделать следующее (пока не знаю, как этот процесс настроить без этих костылей):
+
+- в файле package.json добавить строку `"proxy": "http://194.87.237.6:8081/"` или `"proxy": "http://localhost:8081/"` (в зависимости от того, где запущен flask) (как в коммите [73346119edd853f7ea5331c9717d2db220bd35ed](https://github.com/sag111/med-demo-service_react/blob/73346119edd853f7ea5331c9717d2db220bd35ed/react-webapp-med/package.json))
+- в src/App.js убрать слэш в строке `return fetch('./process/'` -> `return fetch('/process'`
+- возможно убрать `"homepage": ".",` в package.json, но вроде не должно мешать.
+
+После этого, находясь папке react-webapp-med, ввести:
+```commandline
+npm install
+npm start
+```
 
 Можно ещё попробовать тестировать production версию. Для этого:
 - установить serve `sudo npm install -g serve`
@@ -26,7 +32,7 @@
 - запустить билд: `serve -s build`
 - Но будут скорее всего проблемы со связью с flask_service. Сейчас всё настроено так, чтоб работало через апач. Через serve на локалхосте надо как-то по другому делать.
 
-Для встраивания на сайт sagteam.ru:
+Для встраивания на сайт sagteam.ru (выше указанные костыли с proxy и fetch не нужны):
 - создать билд `npm run build`
 - переместить содержимое папки build в /var/www/html/med-demo
 - убедиться, что в настройках apache2 (default-ssl.conf) указаны ProxyPass и ProxyPassReverse связывающие url на который будет посылаться запрос (fetch в  App.js) и ip:port сервера на котором развернут flask_service.

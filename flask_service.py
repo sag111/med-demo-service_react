@@ -159,6 +159,6 @@ if __name__ == '__main__':
 
     # Запуск сервиса
     else:
-        app.run(host=service_config.SERVICE_HOST,port=service_config.SERVICE_PORT, debug=False)
+        app.run(host=service_config.SERVICE_HOST, port=service_config.SERVICE_PORT, debug=False, threaded=False)
 
 #flask_cors.CORS(app, expose_headers='Authorization')

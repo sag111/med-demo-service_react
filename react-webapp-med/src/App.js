@@ -93,11 +93,13 @@ class App extends Component {
     url: "",
     entities: [],
     tableData: {},
-    error: undefined
+    error: undefined,
+    isSubmitButtonDisabled: false
   }
 
   gettingData = async (e) => {
     e.preventDefault();
+    this.setState({isSubmitButtonDisabled: true});
     var input = e.target.elements.keyword.value;
     if (input){
       transformFunction(input).then(() => {
@@ -109,7 +111,8 @@ class App extends Component {
             url: "",
             entities: [],
             tableData: {},
-            error: "Ошибка: некорректный ответ от сервера"
+            error: "Ошибка: некорректный ответ от сервера",
+            isSubmitButtonDisabled: false
           });
           return;
         }
@@ -202,7 +205,8 @@ class App extends Component {
             url: resultSplit[0],
             entities: entities,
             tableData: totalobj,
-            error: undefined
+            error: undefined,
+            isSubmitButtonDisabled: false
           });
         } else if (resultSplit.length === 1) {
           this.setState({
@@ -212,7 +216,8 @@ class App extends Component {
             url: "",
             entities: entities,
             tableData: totalobj,
-            error: undefined
+            error: undefined,
+            isSubmitButtonDisabled: false
           });
         } else {
           this.setState({
@@ -222,7 +227,8 @@ class App extends Component {
             url: "",
             entities: entities,
             tableData: totalobj,
-            error: undefined
+            error: undefined,
+            isSubmitButtonDisabled: false
           });
         }
       });
@@ -235,7 +241,8 @@ class App extends Component {
         url: "",
         entities: [],
         tableData: {},
-        error: "Введите текст отзыва"
+        error: "Введите текст отзыва",
+        isSubmitButtonDisabled: false
       });
     }
   }
@@ -245,7 +252,7 @@ class App extends Component {
       <div className="wrapper">
         <div className="flex-container">
           <h1> Med-demo </h1>
-          <Form TransformText={this.gettingData}/>
+          <Form TransformText={this.gettingData} isSubmitButtonDisabled={this.state.isSubmitButtonDisabled}/>
           <div>
             { this.state.found &&
               <div>
