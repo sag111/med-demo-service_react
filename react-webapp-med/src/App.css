@@ -95,7 +95,11 @@ textarea[type="text"] {
 textarea::-moz-placeholder {
   color: #103a65;
 }
-
+.button_group button {
+    display: block;
+    margin: 5px;
+    width: 20%;
+}
 button {
   appearance: none;
   border: 0;
@@ -108,7 +112,7 @@ button {
   margin-right: 0px;
 }
 button:hover {
-  background-color: #6999fa
+  background-color: #4676d7
 }
 button:active {
   background-color: #79a9ff

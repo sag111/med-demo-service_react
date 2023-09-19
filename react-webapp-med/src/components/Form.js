@@ -5,7 +5,11 @@ class Form extends React.Component{
     return(
       <form onSubmit={this.props.TransformText}>
         <textarea type="text" name="keyword" placeholder="Введите текст отзыва" cols="80" rows="8" charswidth="100"/>
-        <button disabled={this.props.isSubmitButtonDisabled}>Разобрать</button>
+        <div class="button_group">
+            <button disabled={this.props.isSubmitButtonDisabled}>Разобрать</button>
+            <button disabled={this.props.isSubmitButtonDisabled} type="button" onClick={this.props.DisplayFileExample}>Отобразить пример</button>
+            <button disabled={this.props.isSubmitButtonDisabled} type="button" onClick={this.props.DisplayServiceExample}>Запросить пример</button>
+        </div>
       </form>
     );
   }

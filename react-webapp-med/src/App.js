@@ -6,11 +6,54 @@ import Form from "./components/Form";
 
 var res_fetch;
 
-const transformFunction = (input) => {
-    var fileJson = require('./test.json');
-    var randIndex = Math.floor(Math.random() * fileJson.length);
+function getExample_fromFile() {
+  return new Promise((resolve, reject) => {
+    // Assuming './test.json' is a valid JSON file path
+    fetch('src/test.json')
+      .then((response) => {
+        if (response.status >= 200 && response.status < 300) {
+          return response.json();
+        } else {
+          let error = new Error(response.statusText);
+          error.response = response;
+          throw error;
+        }
+      })
+      .then((data) => {
+        // Randomly select an item from the JSON array
+        const randIndex = Math.floor(Math.random() * data.length);
+        const selectedData = data[randIndex];
+        resolve(selectedData);
+      })
+      .catch((error) => {
+        console.error('Error: ' + error.message);
+        console.log(error.response);
+        reject('Ошибка: не удалось загрузить файл');
+      });
+  });
+}
 
-    return fetch('./process/', {
+const getExample_fromNNService = () => {
+    return fetch('./get_example', {
+       method: 'GET',
+     }).then((response) => {
+          if (response.status >= 200 && response.status < 300) {
+            return response.json();
+          } else {
+            let error = new Error(response.statusText);
+            error.response = response;
+            throw error;
+          }
+        })
+        .then( (data) =>  { res_fetch = data.data })
+        .catch((e) => {
+            console.log('Error: ' + e.message);
+            console.log(e.response);
+            res_fetch = 'Ошибка: некорректный ответ от сервера';
+        });
+}
+const getParsing_fromNNService = (input) => {
+    return fetch('./process', {
        method: 'POST',
        body: input,
      }).then((response) => {
@@ -97,12 +140,129 @@ class App extends Component {
     isSubmitButtonDisabled: false
   }
 
-  gettingData = async (e) => {
+  displayData(res_fetch) {
+    var reviewExample = res_fetch;
+    const entities = Object.values(reviewExample.entities);
+    var text = reviewExample.text;
+    var totalArr = [];
+    var totalObj = {};
+    var totalobj = {};
+    totalObj.Medication = {};
+    totalObj.Disease = {};
+    var textTail = '';
+
+    const total = entities.map((obj) => {
+      const markupColor = prepareColor(obj.MedEntityType);
+      obj.spans.forEach((span, idx, array) => {
+        const substr = reviewExample.text.substring(span.begin, span.end);
+        if (text) {
+          if (text.includes(substr)) {
+            const dataArr = splitOnce(text, substr);
+            if (obj.MedEntityType === "Medication") {
+              totalArr.push(dataArr[0] + `<span class="text_${markupColor}" data-title=${obj.MedType}>`+substr+'</span>');
+            } else if (obj.MedEntityType === "Disease") {
+              totalArr.push(dataArr[0] + `<span class="text_${markupColor}" data-title=${obj.DisType}>`+substr+'</span>');
+            } else {
+              totalArr.push(dataArr[0] + `<span class="text_${markupColor}">`+substr+'</span>');
+            }
+            text = dataArr[1];
+            textTail = text;
+          }
+        }
+      });
+
+      obj.Context.map(context => {
+        if (!totalobj[context]) {
+          totalobj[context] = []
+        }
+        if (!totalobj[context][obj.MedEntityType]) {
+          totalobj[context][obj.MedEntityType] = []
+        }
+        if (obj.MedEntityType === "Medication") {
+          var typePlusEntitie = obj.MedType + ': '  + prepareInBrackets(obj, `${obj.text}`);
+        }
+        if (obj.MedEntityType === "Disease") {
+          var typePlusEntitie = obj.DisType + ': '  + prepareInBrackets(obj, `${obj.text}`);
+        }
+        if (obj.MedEntityType === "ADR" || obj.MedEntityType === "Note") {
+          var typePlusEntitie = prepareInBrackets(obj, `${obj.text}`);
+        }
+        if (!totalobj[context][obj.MedEntityType].includes(typePlusEntitie)) {
+          totalobj[context][obj.MedEntityType].push(typePlusEntitie);
+        }
+
+      });
+
+      if (obj.MedEntityType === "Medication") {
+        obj.Context.map(context => {
+          if (!totalObj.Medication[context]) {
+            totalObj.Medication[context] = [];
+          }
+          const typePlusEntitie = obj.MedType + ': '  + prepareInBrackets(obj, `${obj.text}`);
+          if (!totalObj.Medication[context].includes(typePlusEntitie)) {
+            totalObj.Medication[context].push(typePlusEntitie);
+          }
+        })
+      }
+
+      if (obj.MedEntityType === "Disease") {
+        obj.Context.map(context => {
+          if (!totalObj.Disease[context]) {
+            totalObj.Disease[context] = [];
+          }
+          const typePlusEntitie = obj.DisType + ': '  + prepareInBrackets(obj, `${obj.text}`);
+          if (!totalObj.Disease[context].includes(typePlusEntitie)) {
+            totalObj.Disease[context].push(typePlusEntitie);
+          }
+        })
+      }
+    });
+    totalArr.push(textTail);
+
+    const result = totalArr.join('');
+    const resultSplit = result.split('\n', 5);
+
+    if (resultSplit.length === 5) {
+      this.setState({
+        found: true,
+        title: resultSplit[2],
+        text: resultSplit[4],
+        url: resultSplit[0],
+        entities: entities,
+        tableData: totalobj,
+        error: undefined,
+        isSubmitButtonDisabled: false
+      });
+    } else if (resultSplit.length === 1) {
+      this.setState({
+        found: true,
+        title: "",
+        text: resultSplit[0],
+        url: "",
+        entities: entities,
+        tableData: totalobj,
+        error: undefined,
+        isSubmitButtonDisabled: false
+      });
+    } else {
+      this.setState({
+        found: true,
+        title: resultSplit[0],
+        text: resultSplit[1],
+        url: "",
+        entities: entities,
+        tableData: totalobj,
+        error: undefined,
+        isSubmitButtonDisabled: false
+      });
+    }
+  }
+  displayParsingResults = async (e) => {
     e.preventDefault();
     this.setState({isSubmitButtonDisabled: true});
     var input = e.target.elements.keyword.value;
     if (input){
-      transformFunction(input).then(() => {
+      getParsing_fromNNService(input).then(() => {
         if (res_fetch === 'Ошибка: некорректный ответ от сервера') {
           this.setState({
             found: false,
@@ -116,123 +276,8 @@ class App extends Component {
           });
           return;
         }
-        var reviewExample = res_fetch;
-        const entities = Object.values(reviewExample.entities);
-        var text = reviewExample.text;
-        var totalArr = [];
-        var totalObj = {};
-        var totalobj = {};
-        totalObj.Medication = {};
-        totalObj.Disease = {};
-        var textTail = '';
-
-        const total = entities.map((obj) => {
-          const markupColor = prepareColor(obj.MedEntityType);
-          obj.spans.forEach((span, idx, array) => {
-            const substr = reviewExample.text.substring(span.begin, span.end);
-            if (text) {
-              if (text.includes(substr)) {
-                const dataArr = splitOnce(text, substr);
-                if (obj.MedEntityType === "Medication") {
-                  totalArr.push(dataArr[0] + `<span class="text_${markupColor}" data-title=${obj.MedType}>`+substr+'</span>');
-                } else if (obj.MedEntityType === "Disease") {
-                  totalArr.push(dataArr[0] + `<span class="text_${markupColor}" data-title=${obj.DisType}>`+substr+'</span>');
-                } else {
-                  totalArr.push(dataArr[0] + `<span class="text_${markupColor}">`+substr+'</span>');
-                }
-                text = dataArr[1];
-                textTail = text;
-              }
-            }
-          });
-          
-          obj.Context.map(context => {
-            if (!totalobj[context]) {
-              totalobj[context] = []
-            }
-            if (!totalobj[context][obj.MedEntityType]) {
-              totalobj[context][obj.MedEntityType] = []
-            }
-            if (obj.MedEntityType === "Medication") {
-              var typePlusEntitie = obj.MedType + ': '  + prepareInBrackets(obj, `${obj.text}`);
-            }
-            if (obj.MedEntityType === "Disease") {
-              var typePlusEntitie = obj.DisType + ': '  + prepareInBrackets(obj, `${obj.text}`);
-            }
-            if (obj.MedEntityType === "ADR" || obj.MedEntityType === "Note") {
-              var typePlusEntitie = prepareInBrackets(obj, `${obj.text}`);
-            }
-            if (!totalobj[context][obj.MedEntityType].includes(typePlusEntitie)) {
-              totalobj[context][obj.MedEntityType].push(typePlusEntitie);
-            }
-
-          });
-
-          if (obj.MedEntityType === "Medication") {
-            obj.Context.map(context => {
-              if (!totalObj.Medication[context]) {
-                totalObj.Medication[context] = [];
-              }
-              const typePlusEntitie = obj.MedType + ': '  + prepareInBrackets(obj, `${obj.text}`);
-              if (!totalObj.Medication[context].includes(typePlusEntitie)) {
-                totalObj.Medication[context].push(typePlusEntitie);
-              }
-            })
-          }
-
-          if (obj.MedEntityType === "Disease") {
-            obj.Context.map(context => {
-              if (!totalObj.Disease[context]) {
-                totalObj.Disease[context] = [];
-              }
-              const typePlusEntitie = obj.DisType + ': '  + prepareInBrackets(obj, `${obj.text}`);
-              if (!totalObj.Disease[context].includes(typePlusEntitie)) {
-                totalObj.Disease[context].push(typePlusEntitie);
-              }
-            })
-          }
-        });
-        totalArr.push(textTail);
-
-        const result = totalArr.join('');
-        const resultSplit = result.split('\n', 5);
-
-        if (resultSplit.length === 5) {
-          this.setState({
-            found: true,
-            title: resultSplit[2],
-            text: resultSplit[4],
-            url: resultSplit[0],
-            entities: entities,
-            tableData: totalobj,
-            error: undefined,
-            isSubmitButtonDisabled: false
-          });
-        } else if (resultSplit.length === 1) {
-          this.setState({
-            found: true,
-            title: "",
-            text: resultSplit[0],
-            url: "",
-            entities: entities,
-            tableData: totalobj,
-            error: undefined,
-            isSubmitButtonDisabled: false
-          });
-        } else {
-          this.setState({
-            found: true,
-            title: resultSplit[0],
-            text: resultSplit[1],
-            url: "",
-            entities: entities,
-            tableData: totalobj,
-            error: undefined,
-            isSubmitButtonDisabled: false
-          });
-        }
+        this.displayData(res_fetch)
       });
-
     } else {
       this.setState({
         found: false,
@@ -247,12 +292,59 @@ class App extends Component {
     }
   }
 
+  displayExampleFromService = async (e) => {
+    e.preventDefault();
+    this.setState({isSubmitButtonDisabled: true});
+    getExample_fromNNService().then(() => {
+        if (res_fetch === 'Ошибка: некорректный ответ от сервера') {
+          this.setState({
+            found: false,
+            title: "",
+            text: "",
+            url: "",
+            entities: [],
+            tableData: {},
+            error: "Ошибка: некорректный ответ от сервера",
+            isSubmitButtonDisabled: false
+          });
+          return;
+        }
+        this.displayData(res_fetch)
+    });
+  }
+
+  displayExampleFromLocal = async (e) => {
+      e.preventDefault();
+      this.setState({ isSubmitButtonDisabled: true });
+
+      getExample_fromFile()
+        .then((res_fetch) => {
+          if (res_fetch === 'Ошибка: не удалось загрузить файл') {
+            this.setState({
+              found: false,
+              title: '',
+              text: '',
+              url: '',
+              entities: [],
+              tableData: {},
+              error: 'Ошибка: не удалось загрузить файл',
+              isSubmitButtonDisabled: false,
+            });
+            return;
+          }
+          this.displayData(res_fetch);
+        })
+        .catch((error) => {
+          console.error('Error: ' + error);
+        });
+  };
+
   render() {
     return(
       <div className="wrapper">
         <div className="flex-container">
           <h1> Med-demo </h1>
-          <Form TransformText={this.gettingData} isSubmitButtonDisabled={this.state.isSubmitButtonDisabled}/>
+          <Form TransformText={this.displayParsingResults} DisplayFileExample={this.displayExampleFromLocal} DisplayServiceExample={this.displayExampleFromService}  isSubmitButtonDisabled={this.state.isSubmitButtonDisabled}/>
           <div>
             { this.state.found &&
               <div>

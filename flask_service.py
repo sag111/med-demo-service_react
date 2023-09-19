@@ -80,10 +80,8 @@ def hello():
            "send get request to the url /models_status to check if models are loaded and ready; <br>" \
            "send post request with text data to the url /process to parse input text and receive json"
 
-@app.route('/json_test', methods=['GET'])
+@app.route('/get_example', methods=['GET'])
 def json_test():
-    print(os.getcwd())
-    print(os.listdir("."))
     with open("data/example.json", "r") as f:
         examples_list = json.load(f)
     random_example = examples_list[random.randint(0, len(examples_list)-1)]
