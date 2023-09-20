@@ -6,73 +6,6 @@ import Form from "./components/Form";
 
 var res_fetch;
 
-function getExample_fromFile() {
-  return new Promise((resolve, reject) => {
-    // Assuming './test.json' is a valid JSON file path
-    fetch('src/test.json')
-      .then((response) => {
-        if (response.status >= 200 && response.status < 300) {
-          return response.json();
-        } else {
-          let error = new Error(response.statusText);
-          error.response = response;
-          throw error;
-        }
-      })
-      .then((data) => {
-        // Randomly select an item from the JSON array
-        const randIndex = Math.floor(Math.random() * data.length);
-        const selectedData = data[randIndex];
-        resolve(selectedData);
-      })
-      .catch((error) => {
-        console.error('Error: ' + error.message);
-        console.log(error.response);
-        reject('Ошибка: не удалось загрузить файл');
-      });
-  });
-}
-
-const getExample_fromNNService = () => {
-    return fetch('./get_example', {
-       method: 'GET',
-     }).then((response) => {
-          if (response.status >= 200 && response.status < 300) {
-            return response.json();
-          } else {
-            let error = new Error(response.statusText);
-            error.response = response;
-            throw error;
-          }
-        })
-        .then( (data) =>  { res_fetch = data.data })
-        .catch((e) => {
-            console.log('Error: ' + e.message);
-            console.log(e.response);
-            res_fetch = 'Ошибка: некорректный ответ от сервера';
-        });
-}
-const getParsing_fromNNService = (input) => {
-    return fetch('./process', {
-       method: 'POST',
-       body: input,
-     }).then((response) => {
-          if (response.status >= 200 && response.status < 300) {
-            return response.json();
-          } else {
-            let error = new Error(response.statusText);
-            error.response = response;
-            throw error;
-          }
-        })
-        .then( (data) =>  { res_fetch = data.data })
-        .catch((e) => {
-            console.log('Error: ' + e.message);
-            console.log(e.response);
-            res_fetch = 'Ошибка: некорректный ответ от сервера';
-        });
-}
-
 const splitOnce = (s, on) => {
   var [first, ...rest] = s.split(on);
   return [first, rest.length > 0 ? rest.join(on) : null];
@@ -128,11 +61,11 @@ const prepareInBrackets = (obj, str) => {
 }
 
 class App extends Component {
-
   state = {
     found: false,
     title: "",
     text: "",
+    jsonData: null,
     url: "",
     entities: [],
     tableData: {},
@@ -257,14 +190,28 @@ class App extends Component {
       });
     }
   }
-  displayParsingResults = async (e) => {
+  ParseInputText = async (e) => {
     e.preventDefault();
     this.setState({isSubmitButtonDisabled: true});
     var input = e.target.elements.keyword.value;
     if (input){
-      getParsing_fromNNService(input).then(() => {
-        if (res_fetch === 'Ошибка: некорректный ответ от сервера') {
-          this.setState({
+      fetch('./process', {
+       method: 'POST',
+       body: input,
+     }).then((response) => {
+          if (response.status >= 200 && response.status < 300) {
+            return response.json();
+          } else {
+            let error = new Error(response.statusText);
+            error.response = response;
+            throw error;
+          }
+        })
+        .then( (data) =>  { this.displayData(data.data) })
+        .catch((e) => {
+            console.log('Error: ' + e.message);
+            console.log(e.response);
+            this.setState({
             found: false,
             title: "",
             text: "",
@@ -275,9 +222,7 @@ class App extends Component {
             isSubmitButtonDisabled: false
           });
           return;
-        }
-        this.displayData(res_fetch)
-      });
+        });
     } else {
       this.setState({
         found: false,
@@ -292,50 +237,60 @@ class App extends Component {
     }
   }
 
-  displayExampleFromService = async (e) => {
+  GetExampleFromService = async (e) => {
     e.preventDefault();
     this.setState({isSubmitButtonDisabled: true});
-    getExample_fromNNService().then(() => {
-        if (res_fetch === 'Ошибка: некорректный ответ от сервера') {
-          this.setState({
-            found: false,
-            title: "",
-            text: "",
-            url: "",
-            entities: [],
-            tableData: {},
-            error: "Ошибка: некорректный ответ от сервера",
-            isSubmitButtonDisabled: false
-          });
+    fetch('./get_example', {
+       method: 'GET',
+     }).then((response) => {
+          if (response.status >= 200 && response.status < 300) {
+            return response.json();
+          } else {
+            let error = new Error(response.statusText);
+            error.response = response;
+            throw error;
+          }
+        })
+        .then( (data) =>  { this.displayData(data.data) })
+        .catch((e) => {
+            console.log('Error: ' + e.message);
+            console.log(e.response);
+            this.setState({
+                found: false,
+                title: "",
+                text: "",
+                url: "",
+                entities: [],
+                tableData: {},
+                error: "Ошибка: некорректный ответ от сервера",
+                isSubmitButtonDisabled: false
+              });
           return;
-        }
-        this.displayData(res_fetch)
-    });
+        });
   }
 
-  displayExampleFromLocal = async (e) => {
+  DisplayLocalExample = async (e) => {
       e.preventDefault();
       this.setState({ isSubmitButtonDisabled: true });
-
-      getExample_fromFile()
-        .then((res_fetch) => {
-          if (res_fetch === 'Ошибка: не удалось загрузить файл') {
+      fetch('/test.json')
+          .then((response) => response.json())
+          .then((data) => {
+            const randomIndex = Math.floor(Math.random() * data.length);
+            const randomItem = data[randomIndex];
+            this.displayData(randomItem);
+          })
+      .catch((error) => {
+            console.error('Error:', error)
             this.setState({
-              found: false,
-              title: '',
-              text: '',
-              url: '',
-              entities: [],
-              tableData: {},
-              error: 'Ошибка: не удалось загрузить файл',
-              isSubmitButtonDisabled: false,
-            });
-            return;
-          }
-          this.displayData(res_fetch);
-        })
-        .catch((error) => {
-          console.error('Error: ' + error);
+                found: false,
+                title: "",
+                text: "",
+                url: "",
+                entities: [],
+                tableData: {},
+                error: "Ошибка: не удалось найти файл с примерами",
+                isSubmitButtonDisabled: false
+              });
         });
   };
 
@@ -344,7 +299,7 @@ class App extends Component {
       <div className="wrapper">
         <div className="flex-container">
           <h1> Med-demo </h1>
-          <Form TransformText={this.displayParsingResults} DisplayFileExample={this.displayExampleFromLocal} DisplayServiceExample={this.displayExampleFromService}  isSubmitButtonDisabled={this.state.isSubmitButtonDisabled}/>
+          <Form TransformText={this.ParseInputText} DisplayFileExample={this.DisplayLocalExample} DisplayServiceExample={this.GetExampleFromService}  isSubmitButtonDisabled={this.state.isSubmitButtonDisabled}/>
           <div>
             { this.state.found &&
               <div>
