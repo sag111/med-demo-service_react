@@ -1,7 +1,7 @@
 import os
 import sys
 # Это нужно так как у сохранённой модели глеба зашиты пути к его модулям. ВОт почему надо сохранять state_dict, а не всю модель целиком, если делаем кастомные модули.
-sys.path.append(os.path.dirname(__file__) + '/normalization')
+sys.path.append(os.getcwd() + '/normalization')
 import json
 import argparse
 import logging
