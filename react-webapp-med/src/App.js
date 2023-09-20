@@ -70,7 +70,9 @@ class App extends Component {
     entities: [],
     tableData: {},
     error: undefined,
-    isSubmitButtonDisabled: false
+    isSubmitButtonDisabled: false,
+    isServiceAvailable: false,
+    isServiceReady: false
   }
 
   displayData(res_fetch) {
@@ -294,7 +296,40 @@ class App extends Component {
         });
   };
 
+  componentDidMount() {
+    // Check service availability and readiness when the page is loaded
+    this.checkServiceStatus();
+  }
+  checkServiceStatus = () => {
+    // Replace 'your_service_status_endpoint' with the actual endpoint to check service status
+    fetch('./models_status')
+      .then((response) => {
+        if (response.status === 200) {
+          return response.json();
+        } else {
+          throw new Error('Service unavailable');
+        }
+      })
+      .then((statusData) => {
+        this.setState({
+          isServiceAvailable: true, // Service is available
+          isServiceReady: statusData.data["NER model loaded"], // Service readiness flag from JSON
+        });
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        this.setState({
+          isServiceAvailable: false, // Service is unavailable or took too long
+          isServiceReady: false,    // Service is not ready
+        });
+      });
+  };
+
   render() {
+    const { isServiceAvailable, isServiceReady } = this.state;
+    // Define indicator colors based on the state
+    const serviceAvailableColor = isServiceAvailable ? 'green' : 'red';
+    const serviceReadyColor = isServiceReady ? 'green' : 'red';
     return(
       <div className="wrapper">
         <div className="flex-container">
@@ -380,7 +415,9 @@ class App extends Component {
               </table>
             </div>
           }
-
+         Service and model status:
+        <div style={{ backgroundColor: serviceAvailableColor, width: '10px', height: '10px', borderRadius: '50%', display: 'inline-block', marginRight: '10px', display: 'inline-block'}}></div>
+        <div style={{ backgroundColor: serviceReadyColor, width: '10px', height: '10px', borderRadius: '50%', display: 'inline-block', marginRight: '10px' , display: 'inline-block'}}></div>
         </div>
       </div>
     );
