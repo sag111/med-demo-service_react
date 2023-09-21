@@ -333,7 +333,7 @@ class App extends Component {
     return(
       <div className="wrapper">
         <div className="flex-container">
-          <h1> Med-demo </h1>
+          <h1> Med-review parser </h1>
           <Form TransformText={this.ParseInputText} DisplayFileExample={this.DisplayLocalExample} DisplayServiceExample={this.GetExampleFromService}  isSubmitButtonDisabled={this.state.isSubmitButtonDisabled}/>
           <div>
             { this.state.found &&
