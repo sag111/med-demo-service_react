@@ -11,6 +11,11 @@
 5. Запустить flask_service.py. Если в скрипте задать флаг IS_DEBUG_WITHOUT_SERVICE=True, то функции протестируются без запуска сервиса.
     `python ./flask_service.py`
 
+Для запуска в production flask.run не рекомендуется. Сейчас используется пакет waitress
+```commandline
+pip install waitress
+waitress-serve --host 127.0.0.1 --port 8081 --threads 1 flask_service:app
+```
 ## react front app
 Отладка проводилась с node-v16.17.1-linux-x64.
 

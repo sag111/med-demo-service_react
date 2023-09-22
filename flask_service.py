@@ -110,41 +110,41 @@ def getTextFromReactReturnJson():
         print(request)
         return request.get_data()
 
+
+spert_arg_parser = predict_argparser()
+spert_args, _ = spert_arg_parser.parse_known_args(["--config", service_config.SPERT_CONFIG_PATH])
+for run_args, _run_config, _run_repeat in _yield_configs(spert_arg_parser, spert_args):
+
+    spert_trainer = SpERTTrainer(run_args)
+    spert_model = spert_trainer.load_model()
+    break
+SPERT_LOADED = True
+#except Exception as e:
+#    logging.error("Couldn't load spert model or initialize SpertTrainer: " + str(e))
+
+#try:
+norm_net, norm_CV = CADEC_SoTa.load_model(service_config.NORM_MODEL_DIR, return_vectorizer=True)
+# немного странное условие, надо выяснить, надо ли проверять этот флаг и вызывать функцию, или
+# можно при инициализации включить сразу нужный режим?
+# от чего вообще зависит, и какое значнеие мне надо?
+if norm_CV.use_concept_less:
+    norm_CV.switch_to_regular_mode()
+if not norm_CV.use_concept_less:
+    norm_CV.switch_to_concepless_mode()
+if norm_CV.use_cuda:
+    norm_net.to('cuda')
+norm_net.eval()
+NORMALIZER_LOADED = True
+#except Exception as e:
+#    logging.error("Couldn't load normalization model or initialize ConceptVectorizer: " + str(e))
+
+if not (NORMALIZER_LOADED or SPERT_LOADED):
+    raise ValueError("Both Spert and normalizer weren't initialized")
+
 if __name__ == '__main__':
-    #arg_parser = argparse.ArgumentParser(add_help=False)
-    #arg_parser.add_argument('mode', type=str, help="Mode: 'train' or 'eval'")
-    #args, _ = arg_parser.parse_known_args()
-
-    spert_arg_parser = predict_argparser()
-    spert_args, _ = spert_arg_parser.parse_known_args(["--config", service_config.SPERT_CONFIG_PATH])
-    for run_args, _run_config, _run_repeat in _yield_configs(spert_arg_parser, spert_args):
-
-        spert_trainer = SpERTTrainer(run_args)
-        spert_model = spert_trainer.load_model()
-        break
-    SPERT_LOADED = True
-    #except Exception as e:
-    #    logging.error("Couldn't load spert model or initialize SpertTrainer: " + str(e))
-
-    #try:
-    norm_net, norm_CV = CADEC_SoTa.load_model(service_config.NORM_MODEL_DIR, return_vectorizer=True)
-    # немного странное условие, надо выяснить, надо ли проверять этот флаг и вызывать функцию, или
-    # можно при инициализации включить сразу нужный режим?
-    # от чего вообще зависит, и какое значнеие мне надо?
-    if norm_CV.use_concept_less:
-        norm_CV.switch_to_regular_mode()
-    if not norm_CV.use_concept_less:
-        norm_CV.switch_to_concepless_mode()
-    if norm_CV.use_cuda:
-        norm_net.to('cuda')
-    norm_net.eval()
-    NORMALIZER_LOADED = True
-    #except Exception as e:
-    #    logging.error("Couldn't load normalization model or initialize ConceptVectorizer: " + str(e))
-
-    if not (NORMALIZER_LOADED or SPERT_LOADED):
-        raise ValueError("Both Spert and normalizer weren't initialized")
-
+    # arg_parser = argparse.ArgumentParser(add_help=False)
+    # arg_parser.add_argument('mode', type=str, help="Mode: 'train' or 'eval'")
+    # args, _ = arg_parser.parse_known_args()
     # Отладка функций
     if IS_DEBUG_WITHOUT_SERVICE:
         # "я принял аспирин от боли в голове, но от него у меня заболел живот, начало рвать и прочие побочки. .."
